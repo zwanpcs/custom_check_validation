@@ -76,17 +76,19 @@ def main():
         csv_reader = csv.DictReader(csvfile)
         for row in csv_reader:
             print(f'checking: {row["id"]}')
+            compliance_id = row['id']
             script = row['result']
             print('script', script)
             exit_code, stdout, stderr = execute_remote_command(ssh_client, script)
             print(f'exit_code: {exit_code}, stdout: {stdout}, stderr: {stderr}')
             # if returns stderr, it might fail.
             if stderr:
+                #if stdout is not empty and exit_code is  0, it is successful
                 if stdout:
-                   logger.info(f'\n\ncustom check: {row["id"]} \n\nscript: {script} \n\nexit code: {exit_code} \n\nstdout: {stdout} \n\nstderr: {stderr} \n\n\n') 
+                   logger.info(f'\n\ncustom check: {row["id"]} \n\nscript: {script} \n\nexit code: {exit_code} \n\nstderr: {stderr} \n\n\n') 
                 else:
-                    logger.error(f"\n\nfailed custom check: {row['id']} \n\nfailed script: {script} \n\nstderr: {stderr} \n\nexit_code: {exit_code}\n\n\n")
-                    failed_commands.append({'script': script, 'exit_code': exit_code, 'output': stderr})
+                    logger.error(f"\n\nfailed custom check: {row['id']} \n\nfailed script: {script} \n\nstderr: {stderr} \n\nstdout:{stdout} \n\nexit_code: {exit_code}\n\n\n")
+                    failed_commands.append({'id': compliance_id,'script': script, 'exit_code': exit_code, 'output': stderr})
             
             # if run surely succesfully 
             else:
@@ -97,7 +99,7 @@ def main():
 
     # Save failed commands to a new CSV
     with open(args.output, 'w', newline='') as csvfile:
-        fieldnames = ['script', 'exit_code', 'output']
+        fieldnames = ['id', 'script', 'exit_code', 'output']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for command in failed_commands:
@@ -106,4 +108,3 @@ def main():
 
 if __name__=='__main__':
     main()
-       
